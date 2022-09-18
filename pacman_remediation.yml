@@ -5,7 +5,7 @@
       ansible.builtin.include_tasks: aks_details.yml        
       loop: "{{ target_clusters }}"
       when:
-        - aks in item
+        - "aks" in item
     - name: Retrieve the details for GSLB_DOMAIN
       community.aws.route53:
         state: get
