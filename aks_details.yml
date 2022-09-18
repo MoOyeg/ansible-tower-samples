@@ -5,7 +5,23 @@
   when: lookup('ansible.builtin.env', 'CLIENT_ID')|default("") != ""
   register: azure_login 
 
+- name: Remove file (delete file)
+  ansible.builtin.file:
+    path: "/tmp/{{ item }}-kubeconfig"
+    state: absent
+
 - name: Azure Get AKS Kubeconfig
   ansible.builtin.shell: |
-    az aks get-credentials -n "{{ item }}" -g "{{ lookup('ansible.builtin.env', 'RESOURCEGROUP') }}"
+    az aks get-credentials -n "{{ item }}" -g "{{ lookup('ansible.builtin.env', 'RESOURCEGROUP') }}" -f /tmp/{{ item }}-kubeconfig
   when: azure_login 
+
+- name: Use Kubeconfig to get Ingress IP
+  ansible.builtin.shell: |
+    oc get service/pacman -n pacman-app -o jsonpath="{.status.loadBalancer.ingress.ip}" --kubeconfig /tmp/{{ item }}-kubeconfig
+  when: azure_login
+  register: ingress_ip 
+
+- name: Echo Ingress IP
+  ansible.builtin.debug: |
+    msg: "{{ ingress_ip }}"
+  when: azure_login
