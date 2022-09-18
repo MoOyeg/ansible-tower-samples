@@ -1,0 +1,6 @@
+- name: Hello World Sample
+  hosts: all
+  tasks:
+    - name: Azure Login
+      ansible.builtin.shell: |
+        az login --service-principal -u $CLIENT_ID -p $PASSWORD --tenant $TENANT
