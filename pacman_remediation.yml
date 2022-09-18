@@ -2,7 +2,7 @@
   hosts: all
   tasks:
     - name: Loop through target clusters for AKS Clusters
-      ansible.builtin.include_tasks: aks_details.yml        
+      ansible.builtin.include_tasks: aks_details.yml       
       loop: "{{ target_clusters }}"
       when: item is search("aks")
 
