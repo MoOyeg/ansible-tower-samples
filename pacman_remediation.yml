@@ -1,16 +1,25 @@
-- name: Hello World Sample
+- name: Pacman_App_Sync
   hosts: all
   tasks:
-    - name: Loop through target clusters
-      ansible.builtin.debug:
-        msg: "{{ item }}"
-      loop: "{{ target_clusters }}"
-    - name: Import Role
-      ansible.builtin.include_role:
-        role: manage_aws_r53
-    - name: Basic usage
-      ansible.builtin.debug:
-        msg: "'{{ lookup('ansible.builtin.env', 'CLIENT_ID') }}'"
-    - name: Azure Login
-      ansible.builtin.shell: |
-        az login --service-principal -u "{{ lookup('ansible.builtin.env', 'CLIENT_ID') }}" -p "{{ lookup('ansible.builtin.env', 'PASSWORD') }}" --tenant "{{ lookup('ansible.builtin.env', 'TENANT') }}"
+    - name: Loop through target clusters for AKS Clusters
+      ansible.builtin.include_tasks: aks_details.yml        
+      with_items: "{{ target_clusters }}"
+      when:
+        - "aks in item|lower"
+    - name: Retrieve the details for GSLB_DOMAIN
+      community.aws.route53:
+        state: get
+        zone: "{{ base_domain }}"
+        record: "{{ gslb_domain }}"
+        type: A
+      register: record
+    # - name: Delete Old Ingress/Route
+    #   community.aws.route53:
+    #     state: absent
+    #     zone: foo.com
+    #     record: "{{ rec.set.record }}"
+    #     ttl: "{{ rec.set.ttl }}"
+    #     type: "{{ rec.set.type }}"
+    #     value: "{{ rec.set.value }}"
+
+

@@ -1,0 +1,11 @@
+
+- name: Azure Login
+  ansible.builtin.shell: |
+    az login --service-principal -u "{{ lookup('ansible.builtin.env', 'CLIENT_ID') }}" -p "{{ lookup('ansible.builtin.env', 'PASSWORD') }}" --tenant "{{ lookup('ansible.builtin.env', 'TENANT') }}"
+  when: lookup('ansible.builtin.env', 'CLIENT_ID')|default("") != ""
+  register: azure_login 
+
+- name: Azure Get AKS Kubeconfig
+  ansible.builtin.shell: |
+    az aks get-credentials -n "{{ item }}" -g "{{ lookup('ansible.builtin.env', 'RESOURCEGROUP') }}"
+  when: azure_login 
