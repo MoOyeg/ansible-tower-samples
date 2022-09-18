@@ -1,6 +1,13 @@
 - name: Hello World Sample
   hosts: all
   tasks:
+    - name: Loop through target clusters
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ target_clusters }}"
+    - name: Import Role
+      ansible.builtin.include_role:
+        role: manage_aws_r53
     - name: Basic usage
       ansible.builtin.debug:
         msg: "'{{ lookup('ansible.builtin.env', 'CLIENT_ID') }}'"
