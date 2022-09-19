@@ -6,6 +6,12 @@
       loop: "{{ target_clusters }}"
       when: item is search("aks")
 
+    - name: Loop through target clusters for EKS Clusters
+      ansible.builtin.include_tasks: aks_details.yml       
+      loop: "{{ target_clusters }}"
+      when: item is search("aks")
+
+
     - name: Retrieve the details for GSLB_DOMAIN
       community.aws.route53:
         state: get

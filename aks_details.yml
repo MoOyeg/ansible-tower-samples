@@ -15,13 +15,26 @@
     az aks get-credentials -n "{{ item }}" -g "{{ lookup('ansible.builtin.env', 'RESOURCEGROUP') }}" -f /tmp/{{ item }}-kubeconfig
   when: azure_login 
 
+- name: Display resolv.conf contents
+  command: cat /tmp/{{ item }}-kubeconfig
+  register: command_output
+
+- name: Print to console
+  debug:
+    msg: "{{command_output.stdout}}"
+
 - name: Use Kubeconfig to get Ingress IP
   ansible.builtin.shell: |
-    oc get service/pacman -n pacman-app -o jsonpath="{.status.loadBalancer.ingress.ip}" --kubeconfig /tmp/{{ item }}-kubeconfig
+    oc get service/pacman -n pacman-app -o jsonpath="{.status.loadBalancer.ingress[0].ip}"  --insecure-skip-tls-verify=true --kubeconfig=/tmp/{{ item }}-kubeconfig
   when: azure_login
-  register: ingress_ip 
+  register: ip_address
 
-- name: Echo Ingress IP
-  ansible.builtin.debug: |
-    msg: "{{ ingress_ip }}"
-  when: azure_login
+- name: Add IP Address to Cluster dictionary
+  ansible.builtin.set_fact:
+     cluster_ip_dict: "{{ cluster_ip_dict| default({}) | combine({item: ip_address.stdout }) }}"
+  when: 
+    - azure_login
+    - ip_address.stdout | default("") != ""
+
+
+
