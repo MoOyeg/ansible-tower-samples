@@ -31,7 +31,14 @@
 
 - name: Add IP Address to Cluster dictionary
   ansible.builtin.set_fact:
-     cluster_ip_dict: "{{ cluster_ip_dict| default({}) | combine({item: ip_address.stdout }) }}"
+     cluster_ip_dict: "{{ cluster_ip_dict| default({}) | combine({item: ip_address.stdout_lines }) }}"
+  when: 
+    - azure_login
+    - ip_address.stdout | default("") != ""
+
+- name: Add IP Address IP list
+  ansible.builtin.set_fact:
+     ip_list: "{{ ip_list + ip_address.stdout_lines }}"
   when: 
     - azure_login
     - ip_address.stdout | default("") != ""

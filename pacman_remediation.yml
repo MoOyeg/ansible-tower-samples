@@ -1,16 +1,32 @@
-- name: Pacman_App_Sync
+- name: Pacman_AWS_Route53 Simple Sync
   hosts: all
   tasks:
+    - name: Set gslb_record_value
+      ansible.builtin.set_fact:
+        ip_list: []
+
     - name: Loop through target clusters for AKS Clusters
       ansible.builtin.include_tasks: aks_details.yml       
       loop: "{{ target_clusters }}"
       when: item is search("aks")
 
-    - name: Loop through target clusters for EKS Clusters
-      ansible.builtin.include_tasks: aks_details.yml       
+    - name: Loop through target clusters for EKS Clusters(In-Progress)
+      ansible.builtin.include_tasks: eks_details.yml       
       loop: "{{ target_clusters }}"
-      when: item is search("aks")
+      when: item is search("eks")
 
+    - name: Loop through target clusters for GKS Clusters(In-Progress)
+      ansible.builtin.include_tasks: gks_details.yml       
+      loop: "{{ target_clusters }}"
+      when: item is search("gks")
+
+    - name: Loop through target clusters for OCP Clusters(In-Progress)
+      ansible.builtin.include_tasks: ocp_details.yml       
+      loop: "{{ target_clusters }}"
+      when: 
+        - not item is search("aks")
+        - not item is search("gks")
+        - not item is search("eks")    
 
     - name: Retrieve the details for GSLB_DOMAIN
       community.aws.route53:
@@ -18,14 +34,26 @@
         zone: "{{ base_domain }}"
         record: "{{ gslb_domain }}"
         type: A
-      register: record
-    # - name: Delete Old Ingress/Route
-    #   community.aws.route53:
-    #     state: absent
-    #     zone: foo.com
-    #     record: "{{ rec.set.record }}"
-    #     ttl: "{{ rec.set.ttl }}"
-    #     type: "{{ rec.set.type }}"
-    #     value: "{{ rec.set.value }}"
+      register: gslb_record
+
+    - name: Delete our GSLB record 
+      community.aws.route53:
+        state: absent
+        zone: "{{ base_domain }}"
+        record: "{{ gslb_domain }}"
+        type: A
+        wait: yes
+
+    - name: Create our GSLB record if it's not in our base domain record and wait until it propogates
+      community.aws.route53:
+        state: present
+        zone: "{{ base_domain }}"
+        record: "{{ gslb_domain }}"
+        type: A
+        ttl: 7200
+        value: "{{ip_list}}"
+        wait: yes
+
+      
 
 
